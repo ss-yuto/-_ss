@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TASK BOARD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Montserrat:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black: #0a0a0a; --white: #faf9f7;
+      --grey:  #8a8580; --lgrey: #d8d4ce; --gold: #b8976a;
+    }
+    body {
+      font-family: 'Montserrat', 'Noto Sans JP', sans-serif;
+      background: var(--white);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+    }
+    .page { width: 100%; max-width: 720px; padding: 56px 48px 80px; }
+
+    /* MASTHEAD */
+    .masthead { text-align: center; padding-bottom: 28px; border-bottom: 1px solid var(--black); margin-bottom: 28px; }
+    .issue-line { font-size: .6rem; font-weight: 600; letter-spacing: .26em; color: var(--grey); text-transform: uppercase; margin-bottom: 16px; }
+    .logo { font-family: 'Playfair Display', serif; font-size: clamp(3rem,10vw,5rem); font-weight: 900; letter-spacing: -.02em; color: var(--black); line-height: .9; margin-bottom: 12px; }
+    .tagline { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: var(--grey); }
+
+    /* STATS */
+    .stats-bar { display: flex; border-bottom: 1px solid var(--lgrey); margin-bottom: 36px; }
+    .stat-cell { flex: 1; padding: 14px 0; text-align: center; border-right: 1px solid var(--lgrey); }
+    .stat-cell:last-child { border-right: none; }
+    .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; color: var(--black); line-height: 1; display: block; }
+    .stat-label { font-size: .55rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--lgrey); margin-top: 4px; display: block; }
+
+    /* FORM */
+    .form-section { border: 1px solid var(--lgrey); margin-bottom: 36px; }
+    .form-header { padding: 12px 20px; background: var(--black); }
+    .form-header-text { font-size: .6rem; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: var(--white); }
+
+    .form-field { display: flex; align-items: stretch; border-bottom: 1px solid var(--lgrey); }
+    .form-field:last-child { border-bottom: none; }
+    .field-label {
+      width: 96px; min-width: 96px;
+      padding: 14px 16px;
+      font-size: .58rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+      color: var(--grey); border-right: 1px solid var(--lgrey);
+      display: flex; align-items: center;
+    }
+    .field-options { flex: 1; padding: 11px 14px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+    /* チップ */
+    .opt-chip {
+      padding: 5px 13px; border: 1px solid var(--lgrey); background: transparent;
+      font-family: 'Montserrat', sans-serif; font-size: .62rem; font-weight: 500;
+      letter-spacing: .12em; color: var(--grey); cursor: pointer; transition: all .14s; white-space: nowrap;
+    }
+    .opt-chip:hover { border-color: var(--black); color: var(--black); }
+    .opt-chip.sel { background: var(--black); border-color: var(--black); color: var(--white); }
+    .opt-chip[data-s="未着手"].sel { background: var(--grey);  border-color: var(--grey); }
+    .opt-chip[data-s="対応中"].sel { background: var(--gold);  border-color: var(--gold); color: var(--white); }
+    .opt-chip[data-s="完了"].sel   { background: var(--black); border-color: var(--black); }
+
+    .chip-x { display: none; margin-left: 5px; font-size: .65rem; opacity: .55; }
+    .opt-chip:hover .chip-x,
+    .opt-chip.sel   .chip-x { display: inline; }
+    .opt-chip.sel   .chip-x { color: var(--white); opacity: .65; }
+
+    .btn-opt-add {
+      padding: 5px 10px; border: 1px dashed var(--lgrey); background: transparent;
+      font-family: 'Montserrat', sans-serif; font-size: .6rem; font-weight: 500;
+      letter-spacing: .12em; color: var(--lgrey); cursor: pointer; transition: all .14s;
+    }
+    .btn-opt-add:hover { border-color: var(--gold); color: var(--gold); }
+
+    .inline-add { display: none; align-items: center; gap: 5px; }
+    .inline-add.open { display: flex; }
+    .inline-add input {
+      padding: 5px 10px; border: 1px solid var(--black); background: transparent;
+      font-family: 'Montserrat', sans-serif; font-size: .6rem; letter-spacing: .08em;
+      color: var(--black); outline: none; width: 110px;
+    }
+    .inline-add input::placeholder { color: var(--lgrey); }
+    .inline-add .btn-ok {
+      padding: 5px 10px; border: 1px solid var(--black); background: var(--black);
+      color: var(--white); font-family: 'Montserrat', sans-serif; font-size: .58rem; cursor: pointer;
+    }
+    .inline-add .btn-ng {
+      padding: 5px 8px; border: 1px solid var(--lgrey); background: transparent;
+      color: var(--grey); font-family: 'Montserrat', sans-serif; font-size: .58rem; cursor: pointer;
+    }
+
+    .form-footer { padding: 14px 20px; border-top: 1px solid var(--lgrey); display: flex; justify-content: flex-end; align-items: center; gap: 16px; }
+    .form-error { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: .9rem; color: var(--gold); flex: 1; }
+    .btn-submit {
+      padding: 10px 28px; background: var(--black); color: var(--white); border: none;
+      font-family: 'Montserrat', sans-serif; font-size: .62rem; font-weight: 600;
+      letter-spacing: .22em; text-transform: uppercase; cursor: pointer; transition: opacity .15s;
+    }
+    .btn-submit:hover { opacity: .7; }
+
+    /* FILTER */
+    .filter-section { margin-bottom: 32px; }
+    .filter-block { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .filter-key { font-size: .55rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--lgrey); width: 72px; flex-shrink: 0; }
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .fchip {
+      padding: 4px 12px; border: 1px solid var(--lgrey); background: transparent;
+      font-family: 'Montserrat', sans-serif; font-size: .58rem; font-weight: 500;
+      letter-spacing: .12em; color: var(--lgrey); cursor: pointer; transition: all .13s;
+    }
+    .fchip:hover { border-color: var(--black); color: var(--black); }
+    .fchip.on { background: var(--black); border-color: var(--black); color: var(--white); }
+    .fchip[data-fv="未着手"].on { background: var(--grey);  border-color: var(--grey); }
+    .fchip[data-fv="対応中"].on { background: var(--gold);  border-color: var(--gold); }
+    .fchip[data-fv="完了"].on   { background: var(--black); border-color: var(--black); }
+
+    /* LIST */
+    .list-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+    .list-count { font-size: .58rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--lgrey); }
+    .task-list { display: flex; flex-direction: column; }
+
+    .task-item {
+      display: grid; grid-template-columns: 28px 1fr auto;
+      gap: 0 16px; padding: 22px 0; border-bottom: 1px solid var(--lgrey);
+      animation: fu .2s ease;
+    }
+    @keyframes fu { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+    .task-item.done-task { opacity: .38; }
+
+    .task-num {
+      font-family: 'Cormorant Garamond', serif; font-size: .82rem; font-weight: 300;
+      color: var(--lgrey); letter-spacing: .04em; padding-top: 3px;
+    }
+    .task-body { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+
+    /* 上段: 案件名 · メディア名 + ステータス */
+    .task-header {
+      display: flex; align-items: baseline;
+      justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+    .task-where { display: flex; align-items: baseline; gap: 0; flex-wrap: wrap; }
+    .where-group { display: flex; flex-direction: column; gap: 2px; }
+    .where-group + .where-group { margin-left: 20px; padding-left: 20px; border-left: 1px solid var(--lgrey); }
+    .where-lbl {
+      font-size: .52rem; font-weight: 600; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--lgrey); line-height: 1;
+    }
+    .where-val {
+      font-family: 'Montserrat', sans-serif; font-size: .82rem;
+      font-weight: 600; letter-spacing: .06em; color: var(--black);
+    }
+
+    /* ステータスバッジ（クリック可） */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 11px; border: 1px solid var(--lgrey);
+      cursor: pointer; transition: all .13s; flex-shrink: 0;
+    }
+    .status-badge:hover { border-color: var(--black); }
+    .sbadge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .sbadge-lbl {
+      font-family: 'Montserrat', sans-serif; font-size: .6rem;
+      font-weight: 600; letter-spacing: .14em;
+    }
+    .status-badge[data-sv="未着手"] .sbadge-dot { background: var(--lgrey); }
+    .status-badge[data-sv="未着手"] .sbadge-lbl { color: var(--grey); }
+    .status-badge[data-sv="対応中"] .sbadge-dot { background: var(--gold); }
+    .status-badge[data-sv="対応中"] .sbadge-lbl { color: var(--gold); }
+    .status-badge[data-sv="完了"]   .sbadge-dot { background: var(--black); }
+    .status-badge[data-sv="完了"]   .sbadge-lbl { color: var(--black); }
+
+    /* 下段: 残りタスク */
+    .task-task-wrap { display: flex; flex-direction: column; gap: 3px; }
+    .task-task-lbl {
+      font-size: .52rem; font-weight: 600; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--lgrey);
+    }
+    .task-main {
+      font-family: 'Cormorant Garamond', serif; font-size: 1.18rem;
+      font-weight: 400; color: var(--black); line-height: 1.5; letter-spacing: .01em;
+    }
+    .task-item.done-task .task-main { text-decoration: line-through; text-decoration-thickness: 1px; }
+    .task-item.done-task .where-val { color: var(--lgrey); }
+
+    .btn-remove {
+      align-self: start; background: none; border: none; cursor: pointer;
+      font-family: 'Montserrat', sans-serif; font-size: .56rem; font-weight: 500;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--lgrey);
+      padding-top: 3px; transition: color .13s;
+    }
+    .btn-remove:hover { color: var(--black); }
+
+    /* EMPTY */
+    .empty-state { padding: 44px 0 16px; text-align: center; }
+    .empty-rule { width: 28px; height: 1px; background: var(--lgrey); margin: 0 auto 16px; }
+    .empty-msg { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1rem; color: var(--lgrey); }
+
+    /* FOOTER */
+    .footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--black); display: flex; justify-content: space-between; }
+    .footer-brand { font-size: .58rem; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--lgrey); }
+    .footer-date { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: .85rem; color: var(--lgrey); }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <p class="issue-line">Task Management · 2026</p>
+    <h1 class="logo">TASKS</h1>
+    <p class="tagline">Your curated list of things to do</p>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-cell"><span class="stat-num" id="sAll">0</span><span class="stat-label">Total</span></div>
+    <div class="stat-cell"><span class="stat-num" id="sMizn">0</span><span class="stat-label">未着手</span></div>
+    <div class="stat-cell"><span class="stat-num" id="sTaio">0</span><span class="stat-label">対応中</span></div>
+    <div class="stat-cell"><span class="stat-num" id="sKanryo">0</span><span class="stat-label">完了</span></div>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-section">
+    <div class="form-header"><span class="form-header-text">New Entry</span></div>
+    <div class="form-field"><span class="field-label">案件名</span><div class="field-options" id="fo-project"></div></div>
+    <div class="form-field"><span class="field-label">メディア名</span><div class="field-options" id="fo-media"></div></div>
+    <div class="form-field"><span class="field-label">残りタスク</span><div class="field-options" id="fo-task"></div></div>
+    <div class="form-field"><span class="field-label">ステータス</span><div class="field-options" id="fo-status"></div></div>
+    <div class="form-footer">
+      <span class="form-error" id="formError"></span>
+      <button class="btn-submit" id="btnSubmit">Add Entry →</button>
+    </div>
+  </div>
+
+  <!-- FILTER -->
+  <div class="filter-section" id="filterSection"></div>
+
+  <!-- LIST -->
+  <div class="list-header"><span class="list-count" id="listCount"></span></div>
+  <div class="task-list" id="taskList"></div>
+
+  <footer class="footer">
+    <span class="footer-brand">Task Board</span>
+    <span class="footer-date" id="footerDate"></span>
+  </footer>
+</div>
+
+<script>
+  /* ────────────────────────────────
+     データ
+  ──────────────────────────────── */
+  const TASK_KEY = 'tb_tasks_v5';
+  const OPT_KEY  = 'tb_opts_v5';
+
+  const STATUS_LIST  = ['未着手', '対応中', '完了'];
+  const STATUS_CYCLE = { '未着手': '対応中', '対応中': '完了', '完了': '未着手' };
+
+  // 管理可能フィールド定義
+  const EDITABLE_FIELDS = [
+    { key: 'project', label: '案件名'   },
+    { key: 'media',   label: 'メディア名' },
+    { key: 'task',    label: '残りタスク' },
+  ];
+
+  let tasks   = JSON.parse(localStorage.getItem(TASK_KEY) || '[]');
+  let opts    = JSON.parse(localStorage.getItem(OPT_KEY)  || 'null') || { project: [], media: [], task: [] };
+
+  // 入力フォームの選択状態
+  let sel = { project: null, media: null, task: null, status: null };
+
+  // フィルター状態（statusのみ）
+  let filterStatus = 'all';
+
+  /* ────────────────────────────────
+     保存
+  ──────────────────────────────── */
+  const saveTasks = () => localStorage.setItem(TASK_KEY, JSON.stringify(tasks));
+  const saveOpts  = () => localStorage.setItem(OPT_KEY,  JSON.stringify(opts));
+
+  /* ────────────────────────────────
+     日付
+  ──────────────────────────────── */
+  document.getElementById('footerDate').textContent =
+    new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  /* ────────────────────────────────
+     フォーム描画
+  ──────────────────────────────── */
+  function renderForm() {
+    // 管理可能な3フィールド
+    EDITABLE_FIELDS.forEach(({ key }) => {
+      const wrap = document.getElementById(`fo-${key}`);
+      wrap.innerHTML = '';
+
+      opts[key].forEach(val => {
+        const chip = document.createElement('button');
+        chip.className = 'opt-chip' + (sel[key] === val ? ' sel' : '');
+        chip.innerHTML = `${val}<span class="chip-x">✕</span>`;
+        // チップ選択
+        chip.addEventListener('click', e => {
+          if (e.target.classList.contains('chip-x')) {
+            deleteOpt(key, val);
+          } else {
+            sel[key] = (sel[key] === val) ? null : val;
+            renderForm();
+          }
+        });
+        wrap.appendChild(chip);
+      });
+
+      // + 追加ボタン
+      const btnAdd = document.createElement('button');
+      btnAdd.className = 'btn-opt-add';
+      btnAdd.textContent = '+ 追加';
+
+      const inlineWrap = document.createElement('div');
+      inlineWrap.className = 'inline-add';
+      const inp  = document.createElement('input');
+      inp.type = 'text'; inp.maxLength = 30; inp.placeholder = '名前を入力';
+      const ok  = document.createElement('button');
+      ok.className = 'btn-ok'; ok.textContent = 'OK';
+      const ng  = document.createElement('button');
+      ng.className = 'btn-ng'; ng.textContent = 'Cancel';
+
+      const commit = () => {
+        const v = inp.value.trim();
+        if (v && !opts[key].includes(v)) {
+          opts[key].push(v);
+          saveOpts();
+          renderForm();
+          renderFilters();
+        }
+        inp.value = '';
+        inlineWrap.classList.remove('open');
+        btnAdd.style.display = '';
+      };
+      const cancel = () => {
+        inp.value = '';
+        inlineWrap.classList.remove('open');
+        btnAdd.style.display = '';
+      };
+
+      btnAdd.addEventListener('click', () => {
+        inlineWrap.classList.add('open');
+        btnAdd.style.display = 'none';
+        inp.focus();
+      });
+      ok.addEventListener('click', commit);
+      ng.addEventListener('click', cancel);
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  commit();
+        if (e.key === 'Escape') cancel();
+      });
+
+      inlineWrap.append(inp, ok, ng);
+      wrap.append(btnAdd, inlineWrap);
+    });
+
+    // ステータス（固定）
+    const swrap = document.getElementById('fo-status');
+    swrap.innerHTML = '';
+    STATUS_LIST.forEach(s => {
+      const chip = document.createElement('button');
+      chip.className = 'opt-chip' + (sel.status === s ? ' sel' : '');
+      chip.dataset.s = s;
+      chip.textContent = s;
+      chip.addEventListener('click', () => {
+        sel.status = (sel.status === s) ? null : s;
+        renderForm();
+      });
+      swrap.appendChild(chip);
+    });
+  }
+
+  function deleteOpt(key, val) {
+    if (!confirm(`「${val}」を削除しますか？`)) return;
+    opts[key] = opts[key].filter(v => v !== val);
+    if (sel[key] === val) sel[key] = null;
+    saveOpts();
+    renderForm();
+    render();
+  }
+
+  /* ────────────────────────────────
+     フィルター描画（ステータスのみ常時表示）
+  ──────────────────────────────── */
+  function renderFilters() {
+    const sec = document.getElementById('filterSection');
+    sec.innerHTML = '';
+
+    const block = document.createElement('div');
+    block.className = 'filter-block';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'filter-key';
+    lbl.textContent = 'Status';
+    block.appendChild(lbl);
+
+    const chips = document.createElement('div');
+    chips.className = 'filter-chips';
+
+    // Allボタン
+    chips.appendChild(makeFChip('All', 'all'));
+
+    // ステータスボタン
+    STATUS_LIST.forEach(s => chips.appendChild(makeFChip(s, s)));
+
+    block.appendChild(chips);
+    sec.appendChild(block);
+  }
+
+  function makeFChip(label, val) {
+    const c = document.createElement('button');
+    c.className = 'fchip' + (filterStatus === val ? ' on' : '');
+    c.dataset.fv = val;
+    c.textContent = label;
+    c.addEventListener('click', () => {
+      filterStatus = val;
+      renderFilters();
+      render();
+    });
+    return c;
+  }
+
+  /* ────────────────────────────────
+     統計
+  ──────────────────────────────── */
+  function updateStats() {
+    document.getElementById('sAll').textContent    = tasks.length;
+    document.getElementById('sMizn').textContent   = tasks.filter(t => t.status === '未着手').length;
+    document.getElementById('sTaio').textContent   = tasks.filter(t => t.status === '対応中').length;
+    document.getElementById('sKanryo').textContent = tasks.filter(t => t.status === '完了').length;
+  }
+
+  /* ────────────────────────────────
+     タスクリスト描画
+  ──────────────────────────────── */
+  function render() {
+    updateStats();
+
+    // フィルタリング（ステータスのみ）
+    const visible = filterStatus === 'all'
+      ? [...tasks]
+      : tasks.filter(t => t.status === filterStatus);
+
+    document.getElementById('listCount').textContent =
+      `${visible.length} / ${tasks.length} entries`;
+
+    const list = document.getElementById('taskList');
+    list.innerHTML = '';
+
+    if (visible.length === 0) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-rule"></div>
+          <p class="empty-msg">No entries found.</p>
+        </div>`;
+      return;
+    }
+
+    visible.forEach((task, i) => {
+      const item = document.createElement('div');
+      item.className = 'task-item' + (task.status === '完了' ? ' done-task' : '');
+
+      // 番号
+      const num = document.createElement('div');
+      num.className = 'task-num';
+      num.textContent = String(i + 1).padStart(2, '0');
+
+      // ボディ
+      const body = document.createElement('div');
+      body.className = 'task-body';
+
+      // ── 上段: 案件名 | メディア名  +  ステータスバッジ ──
+      const header = document.createElement('div');
+      header.className = 'task-header';
+
+      // 案件名 + メディア名
+      const whereWrap = document.createElement('div');
+      whereWrap.className = 'task-where';
+
+      [['案件名', task.project], ['メディア名', task.media]].forEach(([lbl, val]) => {
+        if (!val) return;
+        const g = document.createElement('div');
+        g.className = 'where-group';
+        g.innerHTML = `<span class="where-lbl">${lbl}</span><span class="where-val">${val}</span>`;
+        whereWrap.appendChild(g);
+      });
+
+      // ステータスバッジ（クリックでサイクル）
+      const badge = document.createElement('div');
+      badge.className = 'status-badge';
+      badge.dataset.sv = task.status;
+      badge.title = 'クリックでステータス変更';
+      badge.innerHTML = `<span class="sbadge-dot"></span><span class="sbadge-lbl">${task.status}</span>`;
+      badge.addEventListener('click', () => cycleStatus(task.id));
+
+      header.append(whereWrap, badge);
+      body.appendChild(header);
+
+      // ── 下段: 残りタスク ──
+      const taskWrap = document.createElement('div');
+      taskWrap.className = 'task-task-wrap';
+      taskWrap.innerHTML = `
+        <span class="task-task-lbl">残りタスク</span>
+        <span class="task-main">${task.task || '—'}</span>
+      `;
+      body.appendChild(taskWrap);
+
+      // 削除
+      const btnDel = document.createElement('button');
+      btnDel.className = 'btn-remove';
+      btnDel.textContent = 'Remove';
+      btnDel.addEventListener('click', () => removeTask(task.id));
+
+      item.append(num, body, btnDel);
+      list.appendChild(item);
+    });
+  }
+
+  /* ────────────────────────────────
+     アクション
+  ──────────────────────────────── */
+  function cycleStatus(id) {
+    tasks = tasks.map(t =>
+      t.id === id ? { ...t, status: STATUS_CYCLE[t.status] || '未着手' } : t
+    );
+    saveTasks();
+    render();
+  }
+
+  function removeTask(id) {
+    tasks = tasks.filter(t => t.id !== id);
+    saveTasks();
+    render();
+  }
+
+  document.getElementById('btnSubmit').addEventListener('click', () => {
+    const missing = [];
+    if (!sel.project) missing.push('案件名');
+    if (!sel.media)   missing.push('メディア名');
+    if (!sel.task)    missing.push('残りタスク');
+    if (!sel.status)  missing.push('ステータス');
+
+    if (missing.length) {
+      const el = document.getElementById('formError');
+      el.textContent = `未選択: ${missing.join(' · ')}`;
+      setTimeout(() => { el.textContent = ''; }, 3000);
+      return;
+    }
+
+    tasks.unshift({
+      id:      Date.now(),
+      project: sel.project,
+      media:   sel.media,
+      task:    sel.task,
+      status:  sel.status,
+    });
+
+    saveTasks();
+
+    // 選択リセット
+    sel = { project: null, media: null, task: null, status: null };
+    renderForm();
+    render();
+  });
+
+  /* ────────────────────────────────
+     初期化
+  ──────────────────────────────── */
+  renderForm();
+  renderFilters();
+  render();
+</script>
+</body>
+</html>
